@@ -1,13 +1,18 @@
-import { createServer } from "node:http";
+import { resolve } from "node:path";
+import { createApp as createRouter } from "./http/router.js";
+import { HeritageService } from "./services/heritage-service.js";
 
-export function createApp() {
-  return createServer((request, response) => {
-    if (request.method === "GET" && request.url === "/health") {
-      response.writeHead(200, { "content-type": "application/json; charset=utf-8" });
-      response.end(JSON.stringify({ status: "ok", service: "heritage-service-starter" }));
-      return;
-    }
-    response.writeHead(404, { "content-type": "application/json; charset=utf-8" });
-    response.end(JSON.stringify({ error: "not_found" }));
-  });
+// 无参调用保持基础工程的轻量行为（仅健康检查）；
+// 传入 { dataDir } 时装配完整的馆藏登记服务。
+export function createApp(options) {
+  if (arguments.length === 0) return createRouter();
+
+  const dataDir =
+    options.dataDir ?? process.env.DATA_DIR ?? resolve(process.cwd(), ".runtime/data");
+  const service = new HeritageService({ dataDir, clock: options.clock });
+  const info = service.start();
+  const server = createRouter(service);
+  server.service = service;
+  server.startupInfo = info;
+  return server;
 }

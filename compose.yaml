@@ -5,10 +5,19 @@ services:
       target: runtime
     environment:
       PORT: 8000
+      DATA_DIR: /data
+      OWN_ORG: 市博物馆
     ports:
       - "8000:8000"
+    volumes:
+      # 事件日志必须落在容器外，保证重启与升级后状态可还原。
+      - heritage-data:/data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/health"]
       interval: 5s
       timeout: 2s
       retries: 5
+      start_period: 3s
+
+volumes:
+  heritage-data:
